@@ -2,8 +2,8 @@
 #      Custom ignores      #
 ############################
 config/config.yaml
-data/
-!data/.gitignore
+data/*
+!data/.gitkeep
 
 ############################
 # GitHub Python .gitignore #
