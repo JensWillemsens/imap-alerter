@@ -1,0 +1,11 @@
+# Blacklist all
+**
+
+# Whitelist required
+!Dockerfile
+!LICENSE
+!main.py
+!README.md
+!requirements.txt
+!config/config.template.yaml
+!data/.gitkeep

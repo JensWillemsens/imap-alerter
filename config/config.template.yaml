@@ -1,7 +1,6 @@
 # Config
 polling_time: 15 # Timeout in minutes
 default_folder: "INBOX"
-alerted_file: "alerted.pickle"
 
 accounts:
   ex1_mon:

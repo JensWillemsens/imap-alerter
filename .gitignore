@@ -1,8 +1,9 @@
 ############################
 #      Custom ignores      #
 ############################
-config.yaml
-alerted.pickle
+config/config.yaml
+data/
+!data/.gitignore
 
 ############################
 # GitHub Python .gitignore #

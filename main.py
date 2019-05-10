@@ -36,13 +36,13 @@ def load_config(path):
 
 def load_alerted():
     try:
-        with open(config.get('alerted_file','alerted.pickle'), 'rb') as file_alerted:
+        with open('data/alerted.pickle', 'rb') as file_alerted:
             return pickle.load(file_alerted)
     except FileNotFoundError:
         return dict()
 
 def dump_alerted(uid_alerted):
-    with open(config.get('alerted_file','alerted.pickle'), 'wb') as file_alerted:
+    with open('data/alerted.pickle', 'wb') as file_alerted:
         pickle.dump(uid_alerted, file_alerted)
 
 def poll_unseen(monitor):
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     log.basicConfig(stream=sys.stderr, level=log.DEBUG)
     
     # Load config and state
-    load_config('config.yaml') # Sets global "config" variable
+    load_config('config/config.yaml') # Sets global "config" variable
     uid_alerted = load_alerted()
     
     # Infinite polling
