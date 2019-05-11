@@ -1,5 +1,5 @@
 # Config
-polling_time: 15 # Timeout in minutes
+polling_time: 60 # Timeout in minutes
 default_folder: "INBOX"
 
 accounts:
