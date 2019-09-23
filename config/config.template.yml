@@ -16,6 +16,7 @@ accounts:
     imap_host: "imap.example.com"
     imap_port: 993
     imap_ssl: true
+    smtp_from: "alert@example.com" # If empty, takes username
     smtp_host: "smtp.example.com"
     smtp_port: 587
     smtp_tls: true

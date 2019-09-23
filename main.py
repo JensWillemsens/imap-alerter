@@ -14,25 +14,37 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-'''
+"""
 Simple polling monitor for IMAP mailboxes.
 In case of new mails, it sends a mail alert through SMTP.
 
 @author: Jens Willemsens <jens@jensw.be> May 2019
-'''
+"""
 
-# IMPORTS
-import yaml, imaplib, logging as log, sys, time, pickle, smtplib
 from email.message import EmailMessage
+from pathlib import Path
+import imaplib
+import logging as log
+import pickle
+import smtplib
+import sys
+import time
+import yaml
 
 # GLOBAL VARS
-config = ''
+config = {}
 
-# HELPERS
-def load_config(path):
+
+def load_config(path, glob):
     global config
-    with open(path, 'r') as file_config:
-        config = yaml.safe_load(file_config)  
+    for filename in Path(path).glob(glob):
+        with filename.open(mode='r') as file_config:
+            config = yaml.safe_load(file_config)
+
+    if config == {}:
+        log.error('No config file found')
+        exit(1)
+
 
 def load_alerted():
     try:
@@ -41,9 +53,11 @@ def load_alerted():
     except FileNotFoundError:
         return dict()
 
+
 def dump_alerted(uid_alerted):
     with open('data/alerted.pickle', 'wb') as file_alerted:
         pickle.dump(uid_alerted, file_alerted)
+
 
 def poll_unseen(monitor):
     log.debug('Polling for unseen messages ...')
@@ -56,6 +70,7 @@ def poll_unseen(monitor):
     account.logout()
     log.debug('{} unseen messages found'.format(len(uid_unseen)))
     return uid_unseen
+
 
 def send_alert(alert, count):
     log.debug('Send alerts')
@@ -70,9 +85,11 @@ def send_alert(alert, count):
     
     # Set sender
     sender = config['accounts'][alert['sender']]
-    msg['From'] = sender['username']
-    
-    # Connect to sender
+    msg['From'] = sender.get('smtp_from', sender['username'])
+    if msg['From'] == '':
+        msg['From'] = sender['username']
+
+        # Connect to sender
     with smtplib.SMTP(sender['smtp_host'], sender['smtp_port']) as server:
         server.starttls()
         server.login(sender['username'], sender['password'])
@@ -85,38 +102,49 @@ def send_alert(alert, count):
     
         # Close server connection
         server.quit()
-    
-# MAIN
-if __name__ == '__main__':
-    # Setup logging
-    log.basicConfig(stream=sys.stderr, level=log.DEBUG)
-    
-    # Load config and state
-    load_config('config/config.yaml') # Sets global "config" variable
+
+
+def run():
+    # Get alerted UID's
     uid_alerted = load_alerted()
-    
+
     # Infinite polling
     while 1:
-        for alert in config['alerts']:   
+        for alert in config['alerts']:
             monitor = config['accounts'][alert['monitor']]
             uid_unseen = poll_unseen(monitor)
-            
+
             if len(uid_unseen):
                 uid_alerted_mon = uid_alerted.get(alert['monitor'], set())
                 uid_new = uid_unseen.difference(uid_alerted_mon)
-                if (len(uid_new)):
+                if len(uid_new):
                     # Sending alert
                     log.info("Sending alert for {} messages with UID's: {}".format(len(uid_new), b", ".join(uid_new)))
                     send_alert(alert, len(uid_new))
-                    
+
                     # Update and save alerted UID's
                     uid_alerted_mon.update(uid_new)
                     uid_alerted[alert['monitor']] = uid_alerted_mon
                     dump_alerted(uid_alerted)
                 else:
                     log.info('No new messages found')
-        
+
         # Timeout
         sleep_mins = config.get('polling_time', 15)
         log.debug('Sleeping for {} minute(s)'.format(sleep_mins))
         time.sleep(sleep_mins * 60)
+
+
+def main():
+    # Setup logging
+    log.basicConfig(stream=sys.stderr, level=log.DEBUG)
+
+    # Load config
+    load_config('config', 'config.y*ml')  # Sets global "config" variable
+
+    # Start polling
+    run()
+    
+
+if __name__ == '__main__':
+    main()
