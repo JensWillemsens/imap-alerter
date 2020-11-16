@@ -6,33 +6,40 @@ on:
 env:
   DOCKER_HUB_USER: jenswbebot
   DOCKER_HUB_REPO: jenswbe/imap-alerter
-  DOCKER_CLI_EXPERIMENTAL: enabled
   PLATFORMS: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
 
 jobs:
   build-and-publish:
+    needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-      - name: Install latest Docker version
-        run: |
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-          sudo apt-get update
-          sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce docker-ce-cli containerd.io
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
 
-      - name: Setup multiarch builds
-        run: |
-          docker run --rm --privileged docker/binfmt:66f9012c56a8316f9244ffd7622d7c21c1f6f28d
-          docker buildx create --name multiarch
-          docker buildx use multiarch
-          docker buildx inspect --bootstrap
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-      - name: Login to Docker Hub
-        run: docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
-        env:
-          DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ env.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
-      - name: Build Docker images
-        run: docker buildx build --platform ${PLATFORMS} --push -t ${DOCKER_HUB_REPO} .
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: ${{ env.DOCKER_HUB_REPO }}:latest
+
+      - name: Update repo description
+        uses: peter-evans/dockerhub-description@v2
+        with:
+          username: ${{ env.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          repository: ${{ env.DOCKER_HUB_REPO }}

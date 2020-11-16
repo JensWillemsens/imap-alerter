@@ -1,4 +1,8 @@
 # IMAP-Alerter
+
+[![GitHub Repo](https://img.shields.io/badge/GitHub-repo-brightgreen?logo=github)](https://github.com/JenswBE/imap-alerter)
+[![DockerHub Repo](https://img.shields.io/badge/DockerHub-repo-blue?logo=docker)](https://hub.docker.com/r/jenswbe/imap-alerter)
+
 Monitors mailboxes over IMAP and sends an email alert over SMTP.
 Checks the mailbox for unread messages. In case there are any and no alert was sent for them, a new alert is sent. An unique ID for each message is saved in `data/alerted.pickle`. This way the app only notifies you once.
 
